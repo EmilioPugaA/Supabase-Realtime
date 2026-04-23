@@ -1,15 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { supabase } from './lib/supabaseClient'
 import Scoreboard   from './components/Scoreboard'
 import EventFeed    from './components/EventFeed'
 import NewEventForm from './components/NewEventForm'
 import ScoreHistory from './components/ScoreHistory'   // [A]
+import StatsPanel from './components/StatsPanel'   // [D]
+import PresenceIndicator from './components/PresenceIndicator'   // [B]
+import MatchChat from './components/MatchChat'   // [E]
+import ToastContainer from './components/ToastContainer'
 
 export default function App() {
   const [match,  setMatch]  = useState(null)
   const [events, setEvents] = useState([])
   const [error,  setError]  = useState(null)
   const [scoreHistory, setScoreHistory] = useState([])   // [A]
+  const [toasts, setToasts]     = useState([])          // [C]
+  const localInsertIds          = useRef(new Set())      // [C] ids insertados por este cliente
 
   // ── Carga inicial ──────────────────────────────────────────────
   // Se ejecuta una sola vez al montar. Garantiza que un cliente que
@@ -64,12 +70,21 @@ export default function App() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'match_events' },
         (payload) => {
+          // Actualizar el feed (igual que antes)
           setEvents((prev) => {
-            // Evitar duplicados si la carga inicial y el evento realtime
-            // llegan en orden inesperado (condición de carrera).
             if (prev.some((e) => e.id === payload.new.id)) return prev
             return [payload.new, ...prev]
           })
+
+          // [C] Solo mostrar toast si el evento lo insertó otro cliente
+          if (localInsertIds.current.has(payload.new.id)) {
+            localInsertIds.current.delete(payload.new.id)
+          } else {
+            setToasts((prev) => [
+              ...prev,
+              { ...payload.new, toastId: Date.now() },
+            ])
+          }
         },
       )
       .subscribe()
@@ -130,6 +145,8 @@ export default function App() {
         Panel de Partido en Vivo
       </h1>
 
+      <PresenceIndicator />    {/* [B] */}
+
       <Scoreboard
         match={match}
         onGoalHome={goalHome}
@@ -137,10 +154,18 @@ export default function App() {
         onReset={resetScore}
       />
       <ScoreHistory history={scoreHistory} />    {/* [A] */}
+      <StatsPanel events={events} />    {/* [D] */}
 
-      <NewEventForm />
+      <NewEventForm onInsert={(id) => localInsertIds.current.add(id)} />
+
 
       <EventFeed events={events} />
+
+      <MatchChat />    {/* [E] */}
+      <ToastContainer
+        toasts={toasts}
+        onDismiss={(id) => setToasts((prev) => prev.filter((t) => t.toastId !== id))}
+      />
     </div>
   )
 }
