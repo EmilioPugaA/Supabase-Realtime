@@ -4,6 +4,7 @@ import Scoreboard   from './components/Scoreboard'
 import EventFeed    from './components/EventFeed'
 import NewEventForm from './components/NewEventForm'
 import StatsPanel from './components/StatsPanel'   // [D]
+import PresenceIndicator from './components/PresenceIndicator'   // [B]
 
 export default function App() {
   const [match,  setMatch]  = useState(null)
@@ -117,6 +118,8 @@ export default function App() {
       <h1 style={{ fontSize: '1.1rem', color: '#888', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
         Panel de Partido en Vivo
       </h1>
+
+      <PresenceIndicator />    {/* [B] */}
 
       <Scoreboard
         match={match}
