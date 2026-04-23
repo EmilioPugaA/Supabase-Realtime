@@ -3,6 +3,7 @@ import { supabase } from './lib/supabaseClient'
 import Scoreboard   from './components/Scoreboard'
 import EventFeed    from './components/EventFeed'
 import NewEventForm from './components/NewEventForm'
+import StatsPanel from './components/StatsPanel'   // [D]
 import PresenceIndicator from './components/PresenceIndicator'   // [B]
 
 export default function App() {
@@ -126,6 +127,7 @@ export default function App() {
         onGoalAway={goalAway}
         onReset={resetScore}
       />
+      <StatsPanel events={events} />    {/* [D] */}
 
       <NewEventForm />
 
